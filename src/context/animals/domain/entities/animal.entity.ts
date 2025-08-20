@@ -1,7 +1,6 @@
 import { AnimalType } from '../value-objects/animal-type.vo';
 
 export interface AnimalPrimitive {
-  id: string;
   name: string;
   age: number;
   type: string;

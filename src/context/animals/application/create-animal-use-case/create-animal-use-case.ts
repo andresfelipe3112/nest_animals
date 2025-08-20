@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { Animal } from '../../domain/entities/animal.entity';
 import { AnimalRepository } from '../../domain/repositories/animal.repository';
 import { IAnimalFactory } from '../../infrastructure/factories/interfaces/animal-factory.interface';
@@ -9,9 +9,11 @@ import { UnsupportedAnimalTypeException } from '../../shared/exceptions/unsuppor
 @Injectable()
 export class CreateAnimalUseCase {
   constructor(
+    @Inject('IAnimalFactory')
     private readonly animalFactory: IAnimalFactory,
+    @Inject('AnimalRepository')
     private readonly animalRepository: AnimalRepository,
-  ) {}
+  ) { }
 
   async execute(dto: CreateAnimalDto): Promise<Animal> {
     if (!this.animalFactory.isTypeSupported(dto.type)) {
@@ -29,7 +31,7 @@ export class CreateAnimalUseCase {
 
     const animal = this.animalFactory.createAnimal(animalData);
     const savedAnimal = await this.animalRepository.create(animal);
-    
+
     return savedAnimal;
   }
 }
