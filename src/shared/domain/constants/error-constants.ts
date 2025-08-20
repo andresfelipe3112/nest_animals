@@ -1,0 +1,30 @@
+export const ERROR_CODES = {
+  // Animal Domain Errors
+  ANIMAL_NOT_FOUND: 'ANIMAL_NOT_FOUND',
+  UNSUPPORTED_ANIMAL_TYPE: 'UNSUPPORTED_ANIMAL_TYPE',
+  ANIMAL_CREATION_ERROR: 'ANIMAL_CREATION_ERROR',
+
+  // Generic Errors
+  VALIDATION_ERROR: 'VALIDATION_ERROR',
+  INTERNAL_SERVER_ERROR: 'INTERNAL_SERVER_ERROR',
+  HTTP_EXCEPTION: 'HTTP_EXCEPTION',
+} as const;
+
+export const ERROR_MESSAGES = {
+  [ERROR_CODES.ANIMAL_NOT_FOUND]: 'El animal solicitado no fue encontrado',
+  [ERROR_CODES.UNSUPPORTED_ANIMAL_TYPE]: 'El tipo de animal no es compatible',
+  [ERROR_CODES.ANIMAL_CREATION_ERROR]: 'Error al crear el animal',
+  [ERROR_CODES.VALIDATION_ERROR]: 'Error de validación de datos',
+  [ERROR_CODES.INTERNAL_SERVER_ERROR]: 'Error interno del servidor',
+  [ERROR_CODES.HTTP_EXCEPTION]: 'Error en la petición HTTP',
+} as const;
+
+export const HTTP_STATUS_CODES = {
+  OK: 200,
+  CREATED: 201,
+  NO_CONTENT: 204,
+  BAD_REQUEST: 400,
+  NOT_FOUND: 404,
+  UNPROCESSABLE_ENTITY: 422,
+  INTERNAL_SERVER_ERROR: 500,
+} as const;

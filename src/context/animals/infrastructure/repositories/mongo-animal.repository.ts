@@ -14,7 +14,7 @@ import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document } from 'mongoose';
 
 @Schema({ collection: 'animals' }) // Define el nombre de la colección en MongoDB
-export class AnimalDocument extends Document implements AnimalPrimitive {
+export class AnimalDocument extends Document {
   @Prop({ required: true })
   name: string;
 
@@ -24,23 +24,18 @@ export class AnimalDocument extends Document implements AnimalPrimitive {
   @Prop({ required: true, enum: AnimalType })
   type: string; // Guardamos el tipo como string en la DB
 
-  @Prop({ type: Object }) // Para atributos específicos, guardamos como un objeto flexible
-  specificAttributes: Record<string, any>;
-
-  // Métodos del dominio para la entidad Animal
-  // Estos no se mapean directamente a la base de datos, son parte de la lógica de dominio
-  // pero los incluimos para demostrar la hidratación
-  emitSound(): string { return ''; } // Placeholder
-  getAttributes(): Record<string, any> { return {}; } // Placeholder
-  getType(): AnimalType { return AnimalType.DOG; } // Placeholder
+  @Prop({ type: Object, required: true })
+  attributes: Record<string, any>; // Atributos específicos de cada animal
 }
 
 export const AnimalSchema = SchemaFactory.createForClass(AnimalDocument);
 
-
 @Injectable()
 export class MongoAnimalRepository implements AnimalRepository {
-  constructor(@InjectModel(AnimalDocument.name) private animalModel: Model<AnimalDocument>) {}
+  constructor(
+    @InjectModel(AnimalDocument.name)
+    private animalModel: Model<AnimalDocument>,
+  ) {}
 
   async create(animal: Animal): Promise<Animal> {
     // Convertir la entidad de dominio a un objeto plano para guardar en la DB
@@ -48,7 +43,7 @@ export class MongoAnimalRepository implements AnimalRepository {
       name: animal.getName(),
       age: animal.getAge(),
       type: animal.getType(),
-      specificAttributes: animal.getAttributes(),
+      attributes: animal.getAttributes(),
     });
     const savedDoc = await createdAnimal.save();
     // Rehidratar el documento de la DB a la entidad de dominio
@@ -60,31 +55,45 @@ export class MongoAnimalRepository implements AnimalRepository {
     return animalDoc ? this.mapDocumentToDomain(animalDoc) : null;
   }
 
-  async findAll(type?: string, page: number = 1, limit: number = 10): Promise<Animal[]> {
+  async findAll(
+    type?: string,
+    page: number = 1,
+    limit: number = 10,
+  ): Promise<Animal[]> {
     const query: any = {};
     if (type) {
       query.type = type;
     }
     const skip = (page - 1) * limit;
-    const animalDocs = await this.animalModel.find(query).skip(skip).limit(limit).exec();
-    return animalDocs.map(doc => this.mapDocumentToDomain(doc));
+    const animalDocs = await this.animalModel
+      .find(query)
+      .skip(skip)
+      .limit(limit)
+      .exec();
+    return animalDocs.map((doc) => this.mapDocumentToDomain(doc));
   }
 
-  async update(id: string, animalPartial: Partial<Animal>): Promise<Animal> {
-    const updateData: any = {
-      name: animalPartial.getName ? animalPartial.getName() : undefined,
-      age: animalPartial.getAge ? animalPartial.getAge() : undefined,
-      type: animalPartial.getType ? animalPartial.getType() : undefined,
-      specificAttributes: animalPartial.getAttributes ? animalPartial.getAttributes() : undefined,
-    };
+  async update(id: string, updateData: any): Promise<Animal> {
     // Limpiar propiedades undefined para que no sobrescriban valores existentes
-    Object.keys(updateData).forEach(key => updateData[key] === undefined && delete updateData[key]);
+    Object.keys(updateData).forEach(
+      (key) => updateData[key] === undefined && delete updateData[key],
+    );
 
-    const updatedDoc = await this.animalModel.findByIdAndUpdate(id, updateData, { new: true }).exec();
+    const updatedDoc = await this.animalModel
+      .findByIdAndUpdate(id, updateData, { new: true })
+      .exec();
     if (!updatedDoc) {
       throw new Error(`Animal con ID ${id} no encontrado.`);
     }
     return this.mapDocumentToDomain(updatedDoc);
+  }
+
+  async count(type?: string): Promise<number> {
+    const query: any = {};
+    if (type) {
+      query.type = type;
+    }
+    return await this.animalModel.countDocuments(query).exec();
   }
 
   async delete(id: string): Promise<void> {
@@ -105,24 +114,24 @@ export class MongoAnimalRepository implements AnimalRepository {
           commonProps.id,
           commonProps.name,
           commonProps.age,
-          doc.specificAttributes.color,
-          doc.specificAttributes.isIndoor,
+          doc.attributes.color || '', // color del documento o por defecto
+          doc.attributes.isIndoor ?? false, // isIndoor del documento o por defecto
         );
       case AnimalType.DOG:
         return new Dog(
           commonProps.id,
           commonProps.name,
           commonProps.age,
-          doc.specificAttributes.breed,
-          doc.specificAttributes.isGoodBoy,
+          doc.attributes.breed || '', // breed del documento o por defecto
+          doc.attributes.isGoodBoy ?? true, // isGoodBoy del documento o por defecto
         );
       case AnimalType.COW:
         return new Cow(
           commonProps.id,
           commonProps.name,
           commonProps.age,
-          doc.specificAttributes.weight,
-          doc.specificAttributes.milkProduction,
+          doc.attributes.weight || 0, // weight del documento o por defecto
+          doc.attributes.milkProduction || 0, // milkProduction del documento o por defecto
         );
       default:
         throw new Error(`Tipo de animal desconocido: ${doc.type}`);

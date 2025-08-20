@@ -1,7 +1,2 @@
-import { HttpException, HttpStatus } from '@nestjs/common';
-
-export class AnimalNotFoundException extends HttpException {
-  constructor(id: string) {
-    super(`Animal with ID ${id} not found`, HttpStatus.NOT_FOUND);
-  }
-}
+// Este archivo se mantiene por compatibilidad, pero ahora usa la nueva estructura de dominio
+export { AnimalNotFoundException } from '../../domain/exceptions/animal-not-found.exception';

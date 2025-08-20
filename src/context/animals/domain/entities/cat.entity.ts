@@ -18,10 +18,6 @@ export class Cat extends Animal {
 
   getAttributes(): Record<string, any> {
     return {
-      id: this.getId(),
-      name: this.getName(),
-      age: this.getAge(),
-      type: this.getType(),
       color: this.color,
       isIndoor: this.isIndoor,
     };

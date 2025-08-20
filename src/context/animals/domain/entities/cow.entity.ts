@@ -18,10 +18,6 @@ export class Cow extends Animal {
 
   getAttributes(): Record<string, any> {
     return {
-      id: this.getId(),
-      name: this.getName(),
-      age: this.getAge(),
-      type: this.getType(),
       weight: this.weight,
       milkProduction: this.milkProduction,
     };
