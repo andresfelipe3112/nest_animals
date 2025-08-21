@@ -1,0 +1,243 @@
+openapi: 3.0.0
+info:
+  title: API de Animales
+  description: Una API para gestionar diferentes tipos de animales. Basado en una colección de Postman.
+  version: 1.0.0
+
+servers:
+- url: http://localhost:3000/v1
+  description: Servidor de desarrollo local
+
+paths:
+  /animals:
+    post:
+      summary: Crear un nuevo animal
+      description: Añade un nuevo animal a la base de datos. El tipo de animal determina los atributos requeridos.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Animal'
+      responses:
+        '201':
+          description: Animal creado exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Animal'
+        '400':
+          description: Solicitud inválida
+    get:
+      summary: Obtener una lista de animales
+      description: Recupera una lista paginada de animales, con la opción de filtrar por tipo.
+      parameters:
+      - name: type
+        in: query
+        description: Filtra la lista por tipo de animal (e.g., dog, cat).
+        required: false
+        schema:
+          type: string
+      - name: page
+        in: query
+        description: Número de página para la paginación.
+        required: false
+        schema:
+          type: integer
+          default: 1
+      - name: limit
+        in: query
+        description: Número de resultados por página.
+        required: false
+        schema:
+          type: integer
+          default: 10
+      responses:
+        '200':
+          description: Una lista de animales
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Animal'
+
+  /animals/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      description: El ID del animal.
+      schema:
+        type: string
+    get:
+      summary: Obtener un animal por su ID
+      description: Recupera los detalles de un animal específico usando su ID.
+      responses:
+        '200':
+          description: Detalles del animal
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Animal'
+        '404':
+          description: Animal no encontrado
+    patch:
+      summary: Actualizar un animal
+      description: Actualiza parcial o totalmente los detalles de un animal existente.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateAnimalDto'
+      responses:
+        '200':
+          description: Animal actualizado exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Animal'
+        '404':
+          description: Animal no encontrado
+    delete:
+      summary: Eliminar un animal
+      description: Elimina un animal de la base de datos por su ID.
+      responses:
+        '204':
+          description: Animal eliminado exitosamente
+        '404':
+          description: Animal no encontrado
+
+components:
+  schemas:
+    DogAttributes:
+      type: object
+      properties:
+        breed:
+          type: string
+          description: La raza del perro.
+          example: Golden Retriever
+        isGoodBoy:
+          type: boolean
+          description: Indica si el perro es un buen chico.
+          example: true
+      required:
+      - breed
+      - isGoodBoy
+
+    CatAttributes:
+      type: object
+      properties:
+        color:
+          type: string
+          description: El color del pelaje del gato.
+          example: orange
+        isIndoor:
+          type: boolean
+          description: Indica si el gato es de interior.
+          example: true
+      required:
+      - color
+      - isIndoor
+
+    CowAttributes:
+      type: object
+      properties:
+        weight:
+          type: number
+          description: El peso de la vaca en kg.
+          example: 450
+        milkProduction:
+          type: number
+          description: La producción de leche en litros por día.
+          example: 25
+      required:
+      - weight
+      - milkProduction
+
+    AnimalBase:
+      type: object
+      properties:
+        id:
+          type: string
+          description: ID único generado para el animal.
+          readOnly: true
+          example: "68a634d7c643de9cd1896808"
+        name:
+          type: string
+          description: El nombre del animal.
+          example: Firulais
+        age:
+          type: integer
+          description: La edad del animal en años.
+          example: 3
+        type:
+          type: string
+          description: El tipo de animal.
+          enum: [ dog, cat, cow ]
+      required:
+      - name
+      - age
+      - type
+
+    Dog:
+      allOf:
+      - $ref: '#/components/schemas/AnimalBase'
+      - type: object
+        properties:
+          attributes:
+            $ref: '#/components/schemas/DogAttributes'
+        required:
+        - attributes
+
+    Cat:
+      allOf:
+      - $ref: '#/components/schemas/AnimalBase'
+      - type: object
+        properties:
+          attributes:
+            $ref: '#/components/schemas/CatAttributes'
+        required:
+        - attributes
+
+    Cow:
+      allOf:
+      - $ref: '#/components/schemas/AnimalBase'
+      - type: object
+        properties:
+          attributes:
+            $ref: '#/components/schemas/CowAttributes'
+        required:
+        - attributes
+
+    Animal:
+      oneOf:
+      - $ref: '#/components/schemas/Dog'
+      - $ref: '#/components/schemas/Cat'
+      - $ref: '#/components/schemas/Cow'
+      discriminator:
+        propertyName: type
+        mapping:
+          dog: '#/components/schemas/Dog'
+          cat: '#/components/schemas/Cat'
+          cow: '#/components/schemas/Cow'
+
+    UpdateAnimalDto:
+      type: object
+      properties:
+        name:
+          type: string
+          description: El nuevo nombre del animal.
+          example: "Nuevo Nombre"
+        age:
+          type: integer
+          description: La nueva edad del animal.
+          example: 20
+        attributes:
+          oneOf:
+          - $ref: '#/components/schemas/DogAttributes'
+          - $ref: '#/components/schemas/CatAttributes'
+          - $ref: '#/components/schemas/CowAttributes'
+          description: "Los atributos específicos del animal a actualizar."
+      minProperties: 1
